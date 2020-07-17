@@ -16,7 +16,10 @@ export default (): DatasourceConfiguration => {
     useUnifiedTopology: true,
   })
     .then(() => console.log('Database connection is ready'))
-    .catch(() => console.log('Database connect is failed'));
+    .catch(() => {
+      console.error('Database connect is failed');
+      process.exit(100);
+    });
 
   return {
     ds: mongoose,

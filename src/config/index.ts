@@ -10,7 +10,7 @@ export interface Configuration {
 
 export const config = (app: Application): Configuration => app.get('config');
 
-export default async (app: Application): void => {
+export default (app: Application): void => {
   app.set('config', {
     appName: 'The Test',
     httpd: httpdConfigure(),
