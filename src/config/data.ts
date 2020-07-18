@@ -3,7 +3,7 @@
 import mongoose, { Mongoose, Model } from 'mongoose';
 
 export interface DatasourceConfiguration {
-  ds: Mongoose;
+  db: Mongoose;
   models: {
     [index: string]: Model<any>;
   };
@@ -22,7 +22,7 @@ export default (): DatasourceConfiguration => {
     });
 
   return {
-    ds: mongoose,
+    db: mongoose,
     models: mongoose.models,
   };
 };
