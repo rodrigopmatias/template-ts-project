@@ -26,6 +26,12 @@
     }
   },
   "rules": {
+    "max-len": [
+      "warn",
+      {
+        "code": 140
+      }
+    ],
     "import/extensions": [
       "error",
       "ignorePackages",

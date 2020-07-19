@@ -12,7 +12,7 @@ export interface IUser extends Document {
   isAdmin?: boolean;
 
   setPassword(plain: string): void;
-  matchPasswrod(plain: string): boolean;
+  matchPassword(plain: string): boolean;
 }
 
 export default (db: Mongoose, app: Application): Model<IUser> => {

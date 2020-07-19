@@ -1,15 +1,40 @@
 import BaseController from '@/helpers/controller';
+import jwt from 'jwt-simple';
+import crypto from 'crypto';
 import { Model } from 'mongoose';
-import { IUser } from '@/models/User';
 import { Application, Request, Response } from 'express';
+import { IUser } from '@/models/User';
 import { config } from '@/config';
+import { SecurityConfiguration } from '@/config/security';
+
+function mkToken(userId: string, secret: string, tokenTimeout: number, refreshTimeout: number): string {
+  const current = (new Date()).getTime();
+  const expireAt = current + tokenTimeout;
+  const refreshAt = current + refreshTimeout;
+  const abc = Buffer.from(Array(16));
+
+  crypto.randomFillSync(abc, 0, 16);
+
+  return jwt.encode(
+    {
+      userId,
+      expireAt,
+      refreshAt,
+      abc: abc.toString('base64'),
+    },
+    secret,
+  );
+}
 
 export class AuthController extends BaseController {
   private model: Model<IUser>;
 
-  constructor(userModel: Model<IUser>) {
+  private security: SecurityConfiguration;
+
+  constructor(userModel: Model<IUser>, security: SecurityConfiguration) {
     super('authController');
     this.model = userModel;
+    this.security = security;
   }
 
   async register(req: Request, res: Response): Promise<Response> {
@@ -49,10 +74,41 @@ export class AuthController extends BaseController {
 
     return res;
   }
+
+  protected mkToken(userId: string): string {
+    const { secret, refreshTimeout, tokenTimeout } = this.security;
+    return mkToken(userId, secret, tokenTimeout, refreshTimeout);
+  }
+
+  async token(req: Request, res: Response): Promise<Response> {
+    const { email, password } = req.body;
+    const result = {
+      success: false,
+      message: 'User or password not match',
+    };
+
+    if (email && password) {
+      const user = await this.model.findOne({ email, isActive: true });
+
+      if (user && await user.matchPassword(password)) {
+        res.status(200).send({
+          success: true,
+          token: this.mkToken(user.id),
+        });
+      } else {
+        res.status(401).send(result);
+      }
+    } else {
+      res.status(401).send(result);
+    }
+
+    return res;
+  }
 }
 
 export default (app: Application): BaseController => {
   const { User } = config(app).data.models;
+  const { security } = config(app);
 
-  return new AuthController(User);
+  return new AuthController(User, security);
 };
