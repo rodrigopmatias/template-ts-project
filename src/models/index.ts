@@ -5,6 +5,7 @@ import path from 'path';
 import { config } from '@/config';
 import { dynamicRequire } from '@/helpers/core';
 import { Model, Document } from 'mongoose';
+import { IPermission } from './Permission';
 
 export function modelByName<T extends Document>(app: Application, name: string): Model<T> {
   const { data } = config(app);
@@ -29,5 +30,27 @@ export default (app: Application): void => {
         console.log(`  Exception found in ${filepath}`);
         console.exception(e);
       }
+    });
+
+  console.log('Populating permissions...');
+  const Permission = modelByName<IPermission>(app, 'Permission');
+  Object.keys(data.models)
+    .forEach((modelName: string) => {
+      ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
+        .forEach((verb: string) => {
+          const codename = [modelName, verb].join('.');
+
+          Permission.countDocuments({ codename })
+            .then((count: number) => {
+              if (count === 0) {
+                console.log(`  Created permission for ${codename}`);
+                Permission.create({
+                  modelName,
+                  verb,
+                });
+              }
+            })
+            .catch((e) => console.log(e));
+        });
     });
 };
